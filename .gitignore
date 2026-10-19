@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+.DS_Store
+build/
+dist/
+# generated outputs (regenerate with run_all.py)
+figures/*.png
+tables/*.csv
+tables/*.md
+!figures/.gitkeep
+!tables/.gitkeep

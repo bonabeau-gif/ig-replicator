@@ -8,14 +8,14 @@ a two-dimensional landscape, and the direct identity tests.
 
 ## The object under study
 
-For a search family with relative scores \(s_\theta = \nabla_\theta \log \rho_\theta\),
-a target signal \(w\) (the centered fitness, raw or rank-shaped), and the current
-density \(\rho_\theta\), the **invariance defect** is the \(L^2(\rho_\theta)\) residual
-of \(w\) after least-squares projection onto the score span:
+For a search family with relative scores $s_\theta = \nabla_\theta \log \rho_\theta$,
+a target signal $w$ (the centered fitness, raw or rank-shaped), and the current
+density $\rho_\theta$, the **invariance defect** is the $L^2(\rho_\theta)$ residual
+of $w$ after least-squares projection onto the score span:
 
-```
-delta^2 = E[w^2] - b^T F^+ b,   F = E[s s^T],   b = E[w s],   R^2 = (b^T F^+ b) / E[w^2].
-```
+$$
+\delta^2 = \mathbb{E}[w^2] - b^{\top} F^{+} b, \qquad F = \mathbb{E}[s s^{\top}], \qquad b = \mathbb{E}[w s], \qquad R^2 = \frac{b^{\top} F^{+} b}{\mathbb{E}[w^2]}.
+$$
 
 It is zero exactly when the family is forward-invariant under the (shaped) fitness.
 The package computes this for the Gaussian and Student-t families, the raw and
@@ -85,8 +85,8 @@ run_all.py                driver
 
 `python tests/test_core.py` checks the core against analytic values stated in the
 supplement: zero quadratic defect, the Eq (S3) sinusoid defect, the blow-up times
-5.618 and 2.50, the symmetric-stalling defect \(\sqrt{8a^8/27}=8.709\), \(\mathrm{Var}_U(W)\),
-and the Eq (S4) elite Gaussian \(R^2 = 0.661\). Running the experiments reproduces
+5.618 and 2.50, the symmetric-stalling defect $\sqrt{8a^8/27}=8.709$, $\mathrm{Var}_U(W)$,
+and the Eq (S4) elite Gaussian $R^2 = 0.661$. Running the experiments reproduces
 Tables S1, S2, S4, S5, S7 to three significant figures and the qualitative content
 of the rest.
 
@@ -100,7 +100,7 @@ A few settings:
 - the smooth-elite logistic bandwidth `h = 0.05`.
 
 The finite-sample experiment defaults to 60 samples per setting (the paper used 150);
-override with `IGR_NSAMPLES`. The dictionary-cost experiment estimates \(R^2\) by Monte
+override with `IGR_NSAMPLES`. The dictionary-cost experiment estimates $R^2$ by Monte
 Carlo and finds the structured-rank augmentation to be dimension-free (a constant
 number of rank features beyond the Gaussian base at every dimension), the paper's
 central result for that table; override the sample size with `IGR_NMC`.

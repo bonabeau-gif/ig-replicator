@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ebonabeau/igr-invariance"
+Homepage = "https://github.com/bonabeau-gif/ig-replicator"
 
 [tool.setuptools]
 packages = ["igr"]

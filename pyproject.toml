@@ -11,16 +11,20 @@ requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Eric Bonabeau" }]
 dependencies = [
-  "numpy>=1.24",
+  "numpy>=2.0",
   "scipy>=1.10",
   "scikit-learn>=1.2",
   "pandas>=1.5",
   "matplotlib>=3.6",
   "tabulate>=0.9",
+  "PyYAML>=6.0",
 ]
+
+[project.scripts]
+igr = "igr_cli.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/bonabeau-gif/ig-replicator"
 
 [tool.setuptools]
-packages = ["igr"]
+packages = ["igr", "igr_cli"]

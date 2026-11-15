@@ -11,3 +11,5 @@ tables/*.csv
 tables/*.md
 !figures/.gitkeep
 !tables/.gitkeep
+# run directories written by the igr CLI
+runs/

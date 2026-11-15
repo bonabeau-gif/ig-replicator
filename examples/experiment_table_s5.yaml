@@ -1,0 +1,7 @@
+# Experiment model (about 2 s): run experiments/fig_s09_s10_table_s5_multistep.py unchanged and
+# collect Table S5 and Figures S9-S10 inside the run directory.
+schema: 1
+model: experiment
+seed: 5
+parameters:
+  experiment: {id: S09}

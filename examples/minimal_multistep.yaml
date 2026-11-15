@@ -1,0 +1,15 @@
+# Minimal example (about 0.5 s): one row of Table S5 (Experiment S3 multi-step tracking).
+# Fitness f(x) = 0.30 x - 0.20 x^2 + 0.4 sin(1.5 x) from N(0, 1), Fisher moment flow only,
+# with the grid, horizon, and tolerances of experiments/fig_s09_s10_table_s5_multistep.py.
+schema: 1
+model: trajectory
+seed: 1
+parameters:
+  fitness:
+    kind: perturbed_quadratic
+    perturbed_quadratic: {a: 0.3, b: 0.2, eps: 0.4, k: 1.5}
+  grid: {a: -6.0, b: 6.0, n: 2401}
+  initial: {mu: 0.0, var: 1.0}
+  time: {t_end: 1.0, n_points: 501}
+  surrogates: [param]
+  solver: {rtol: 1.0e-10, atol: 1.0e-13, method: DOP853}

@@ -1,0 +1,13 @@
+# Typical example (about 1 s): Experiment S1 / Figures S1-S2, "quadratic + small sinusoid".
+# Exact tilt vs both Gaussian surrogates (param = Fisher moment flow, proj = L2(dx)) at t = 2.
+schema: 1
+model: trajectory
+seed: 2
+parameters:
+  fitness:
+    kind: perturbed_quadratic
+    perturbed_quadratic: {eps: 0.3}
+  grid: {a: -10.0, b: 10.0, n: 24001}
+  initial: {mu: 0.0, var: 1.0}
+  time: {t_end: 2.0, n_points: 101}
+  surrogates: [param, proj]

@@ -1,0 +1,23 @@
+# Non-default model (about 1 s): Table S1. Linear fitness f(x) = x under N(0, 1), three rank
+# shapings, Gaussian scores with and without rank augmentation. Includes Eq. (S4): Gaussian
+# scores with elite top-25% shaping give R^2 = 0.661.
+schema: 1
+model: projection
+seed: 3
+parameters:
+  fitness:
+    kind: polynomial
+    polynomial: {coefficients: [0.0, 1.0]}
+  grid: {a: -12.0, b: 12.0, n: 24001}
+  state: {family: gaussian, mu: 0.0, var: 1.0}
+  targets:
+    - {signal: linear}
+    - {signal: elite, tau: 0.25}
+    - {signal: smooth_elite, tau: 0.25, h: 0.05}
+  dictionaries:
+    - {augment: legendre_rank, K: 16}
+    - {augment: legendre_rank, K: 2}
+    - {augment: legendre_rank, K: 4}
+    - {augment: legendre_rank, K: 8}
+    - {augment: rank_bins, K: 8}
+    - {augment: none}

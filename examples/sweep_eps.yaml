@@ -1,0 +1,16 @@
+# Sweep (about 3 s): the minimal example over the perturbation amplitudes of Table S5.
+# Run with: igr sweep examples/sweep_eps.yaml --out runs/sweep_eps
+schema: 1
+model: trajectory
+seed: 6
+parameters:
+  fitness:
+    kind: perturbed_quadratic
+    perturbed_quadratic: {a: 0.3, b: 0.2, eps: 0.0, k: 1.5}
+  grid: {a: -6.0, b: 6.0, n: 2401}
+  initial: {mu: 0.0, var: 1.0}
+  time: {t_end: 1.0, n_points: 501}
+  surrogates: [param]
+  solver: {rtol: 1.0e-10, atol: 1.0e-13, method: DOP853}
+sweep:
+  fitness.perturbed_quadratic.eps: [0.0, 0.05, 0.1, 0.2, 0.4, 0.6]

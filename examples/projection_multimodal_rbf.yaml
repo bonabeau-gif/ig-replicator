@@ -1,0 +1,19 @@
+# Non-default model and dictionaries (about 1 s): part of Table S3. Two-mode fitness (width 0.6,
+# modes at -2 and 2) under the broad baseline N(0, 2.5^2), elite top-25% shaping, Gaussian scores
+# augmented with rank bins, Legendre rank features, or 9 RBFs (centers -4..4, h = 0.8).
+schema: 1
+model: projection
+seed: 4
+parameters:
+  fitness:
+    kind: multimodal
+    multimodal: {width: 0.6, centers: [-2.0, 2.0]}
+  grid: {a: -10.0, b: 10.0, n: 24001}
+  state: {family: gaussian, mu: 0.0, var: 6.25}
+  targets:
+    - {signal: elite, tau: 0.25}
+  dictionaries:
+    - {augment: rank_bins, K: 8}
+    - {augment: legendre_rank, K: 8}
+    - {augment: rbf, centers: [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0], h: 0.8}
+    - {augment: none}

@@ -17,6 +17,7 @@ dependencies = [
   "pandas>=1.5",
   "matplotlib>=3.6",
   "tabulate>=0.9",
+  "PyYAML>=6.0",
 ]
 
 [project.scripts]

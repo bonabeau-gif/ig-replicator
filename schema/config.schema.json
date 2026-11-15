@@ -1,0 +1,1731 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "igr-cli/config.schema.json",
+  "title": "igr run configuration (schema 1)",
+  "description": "Generated from igr_cli/registry.py by `igr describe --schema`. Do not edit by hand.",
+  "type": "object",
+  "required": [
+    "model"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": 1,
+      "description": "Configuration format version. Must be 1."
+    },
+    "model": {
+      "enum": [
+        "trajectory",
+        "projection",
+        "experiment"
+      ],
+      "description": "Which model to run."
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Random seed, recorded in the run directory. No model in this package draws random numbers from it: trajectory and projection are deterministic and the experiment scripts use their own fixed seeds. Always set it anyway, so runs stay reproducible if a stochastic model is added."
+    },
+    "parameters": {
+      "type": "object"
+    },
+    "sweep": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1
+      },
+      "description": "Optional, used only by `sweep`: {dotted.parameter: [values, ...]}; the cartesian product is run, one run directory per point."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "model": {
+            "const": "trajectory"
+          }
+        },
+        "required": [
+          "model"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "$ref": "#/$defs/trajectory"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "model": {
+            "const": "projection"
+          }
+        },
+        "required": [
+          "model"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "$ref": "#/$defs/projection"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "model": {
+            "const": "experiment"
+          }
+        },
+        "required": [
+          "model"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "$ref": "#/$defs/experiment"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "trajectory": {
+      "type": "object",
+      "properties": {
+        "fitness": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "quadratic",
+                "perturbed_quadratic",
+                "polynomial",
+                "sinusoid",
+                "multimodal",
+                "stalling",
+                "rational_conjugate",
+                "quadratic_rational_homotopy"
+              ],
+              "description": "Which fitness function f(x) to use. Its parameters go in the block fitness.<kind> (only that block is allowed). Kinds: quadratic: f(x) = 0.30 x - 0.20 x^2; perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x); polynomial: f(x) = sum_i coefficients[i] x^i; sinusoid: f(x) = eps sin(k x); multimodal: f(x) = sum_c exp(-(x - c)^2 / (2 width^2)); stalling: f(x) = -(x^2 - a^2)^2; rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma; quadratic_rational_homotopy: f_s(x) = (1 - s) x^2 + s x^2/(nu + x^2)."
+            },
+            "perturbed_quadratic": {
+              "type": "object",
+              "properties": {
+                "a": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Linear coefficient. Moves the mean.",
+                  "default": 0.3
+                },
+                "b": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Quadratic coefficient (f contains -b x^2). b > 0 is concave; b < 0 is convex and, with eps = 0, the Gaussian variance blows up at t* = 1/(2|b| var0) (Eq. 50).",
+                  "default": 0.2
+                },
+                "eps": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Perturbation amplitude. eps = 0 is exactly Gaussian-invariant; the defect grows with |eps| (Fig S3b). Experiments use 0 to 0.8."
+                },
+                "k": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Perturbation wavenumber.",
+                  "default": 1.5
+                }
+              },
+              "additionalProperties": false
+            },
+            "polynomial": {
+              "type": "object",
+              "properties": {
+                "coefficients": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "description": "[polynomial: f(x) = sum_i coefficients[i] x^i] Polynomial coefficients c0, c1, c2, ... (increasing degree). At least one entry."
+                }
+              },
+              "additionalProperties": false
+            },
+            "sinusoid": {
+              "type": "object",
+              "properties": {
+                "eps": {
+                  "type": "number",
+                  "description": "[sinusoid: f(x) = eps sin(k x)] Amplitude.",
+                  "default": 1.2
+                },
+                "k": {
+                  "type": "number",
+                  "description": "[sinusoid: f(x) = eps sin(k x)] Wavenumber.",
+                  "default": 1.5
+                }
+              },
+              "additionalProperties": false
+            },
+            "multimodal": {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "type": "number",
+                  "description": "[multimodal: f(x) = sum_c exp(-(x - c)^2 / (2 width^2))] Bump width (standard deviation of each bump). Experiments use 0.6.",
+                  "default": 0.5
+                },
+                "centers": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "description": "[multimodal: f(x) = sum_c exp(-(x - c)^2 / (2 width^2))] Bump centers in trait units. Unit: trait units (x).",
+                  "default": [
+                    -2.0,
+                    2.0
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "stalling": {
+              "type": "object",
+              "properties": {
+                "a": {
+                  "type": "number",
+                  "description": "[stalling: f(x) = -(x^2 - a^2)^2] Well location +/- a. The Gaussian surrogate stalls at N(0, a^2/3) (set state.var or initial.var yourself).",
+                  "default": 2.0
+                }
+              },
+              "additionalProperties": false
+            },
+            "rational_conjugate": {
+              "type": "object",
+              "properties": {
+                "alpha": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Coefficient of z."
+                },
+                "beta": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Coefficient of z^2."
+                },
+                "gamma": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Additive constant (does not change any defect or trajectory)."
+                },
+                "mu": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Center of z, trait units. Unit: trait units (x)."
+                },
+                "sigma": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Scale of z, trait units. Unit: trait units (x)."
+                },
+                "nu": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Degrees of freedom of the conjugate Student-t family."
+                }
+              },
+              "additionalProperties": false
+            },
+            "quadratic_rational_homotopy": {
+              "type": "object",
+              "properties": {
+                "s": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "[quadratic_rational_homotopy: f_s(x) = (1 - s) x^2 + s x^2/(nu + x^2)] Homotopy parameter, quadratic (0) to rational (1)."
+                },
+                "nu": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "[quadratic_rational_homotopy: f_s(x) = (1 - s) x^2 + s x^2/(nu + x^2)] nu of the rational endpoint."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ]
+        },
+        "grid": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number",
+              "description": "Left end of the uniform quadrature grid. All densities live on [a, b]; mass outside is truncated. Unit: trait units (x).",
+              "default": -10.0
+            },
+            "b": {
+              "type": "number",
+              "description": "Right end of the quadrature grid. Unit: trait units (x).",
+              "default": 10.0
+            },
+            "n": {
+              "type": "integer",
+              "minimum": 2,
+              "description": "Number of grid points (trapezoidal quadrature). Cost scales linearly with n. Experiments use 2401 to 60001.",
+              "default": 24001
+            }
+          },
+          "additionalProperties": false
+        },
+        "initial": {
+          "type": "object",
+          "properties": {
+            "mu": {
+              "type": "number",
+              "description": "Mean of the initial Gaussian density rho0 = N(mu0, var0). Unit: trait units (x).",
+              "default": 0.0
+            },
+            "var": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Variance of the initial Gaussian density. Unit: trait units squared.",
+              "default": 1.0
+            }
+          },
+          "additionalProperties": false
+        },
+        "time": {
+          "type": "object",
+          "properties": {
+            "t_end": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Final replicator time. The exact tilt is evaluated and the surrogate ODEs integrated on [0, t_end]. Unit: replicator time (1/fitness units; t multiplies f in rho0*exp(t f)).",
+              "default": 2.0
+            },
+            "n_points": {
+              "type": "integer",
+              "minimum": 2,
+              "description": "Number of equally spaced output times in [0, t_end], including both ends.",
+              "default": 101
+            }
+          },
+          "additionalProperties": false
+        },
+        "surrogates": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "param",
+              "proj"
+            ]
+          },
+          "description": "Gaussian surrogates to integrate and compare with the exact tilt. 'param' = Fisher moment flow (Eq. S1); 'proj' = L2(dx) density-velocity projection (comparison only).",
+          "default": [
+            "param",
+            "proj"
+          ]
+        },
+        "solver": {
+          "type": "object",
+          "properties": {
+            "rtol": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Relative tolerance of scipy solve_ivp for the surrogate ODEs.",
+              "default": 1e-09
+            },
+            "atol": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Absolute tolerance of scipy solve_ivp.",
+              "default": 1e-12
+            },
+            "method": {
+              "enum": [
+                "DOP853",
+                "RK45",
+                "RK23",
+                "Radau",
+                "BDF",
+                "LSODA"
+              ],
+              "description": "scipy solve_ivp integration method.",
+              "default": "DOP853"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "fitness"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "perturbed_quadratic"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "perturbed_quadratic": {
+                    "properties": {
+                      "eps": {}
+                    },
+                    "required": [
+                      "eps"
+                    ]
+                  }
+                },
+                "required": [
+                  "perturbed_quadratic"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "perturbed_quadratic": {
+                    "properties": {
+                      "a": false,
+                      "b": false,
+                      "eps": false,
+                      "k": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "polynomial"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "polynomial": {
+                    "properties": {
+                      "coefficients": {}
+                    },
+                    "required": [
+                      "coefficients"
+                    ]
+                  }
+                },
+                "required": [
+                  "polynomial"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "polynomial": {
+                    "properties": {
+                      "coefficients": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "sinusoid"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "sinusoid": {
+                    "properties": {
+                      "eps": false,
+                      "k": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "multimodal"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "multimodal": {
+                    "properties": {
+                      "width": false,
+                      "centers": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "stalling"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "stalling": {
+                    "properties": {
+                      "a": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "rational_conjugate"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "rational_conjugate": {
+                    "properties": {
+                      "alpha": {},
+                      "beta": {},
+                      "gamma": {},
+                      "mu": {},
+                      "sigma": {},
+                      "nu": {}
+                    },
+                    "required": [
+                      "alpha",
+                      "beta",
+                      "gamma",
+                      "mu",
+                      "sigma",
+                      "nu"
+                    ]
+                  }
+                },
+                "required": [
+                  "rational_conjugate"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "rational_conjugate": {
+                    "properties": {
+                      "alpha": false,
+                      "beta": false,
+                      "gamma": false,
+                      "mu": false,
+                      "sigma": false,
+                      "nu": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "quadratic_rational_homotopy"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "quadratic_rational_homotopy": {
+                    "properties": {
+                      "s": {},
+                      "nu": {}
+                    },
+                    "required": [
+                      "s",
+                      "nu"
+                    ]
+                  }
+                },
+                "required": [
+                  "quadratic_rational_homotopy"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "quadratic_rational_homotopy": {
+                    "properties": {
+                      "s": false,
+                      "nu": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "projection": {
+      "type": "object",
+      "properties": {
+        "fitness": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "quadratic",
+                "perturbed_quadratic",
+                "polynomial",
+                "sinusoid",
+                "multimodal",
+                "stalling",
+                "rational_conjugate",
+                "quadratic_rational_homotopy"
+              ],
+              "description": "Which fitness function f(x) to use. Its parameters go in the block fitness.<kind> (only that block is allowed). Kinds: quadratic: f(x) = 0.30 x - 0.20 x^2; perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x); polynomial: f(x) = sum_i coefficients[i] x^i; sinusoid: f(x) = eps sin(k x); multimodal: f(x) = sum_c exp(-(x - c)^2 / (2 width^2)); stalling: f(x) = -(x^2 - a^2)^2; rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma; quadratic_rational_homotopy: f_s(x) = (1 - s) x^2 + s x^2/(nu + x^2)."
+            },
+            "perturbed_quadratic": {
+              "type": "object",
+              "properties": {
+                "a": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Linear coefficient. Moves the mean.",
+                  "default": 0.3
+                },
+                "b": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Quadratic coefficient (f contains -b x^2). b > 0 is concave; b < 0 is convex and, with eps = 0, the Gaussian variance blows up at t* = 1/(2|b| var0) (Eq. 50).",
+                  "default": 0.2
+                },
+                "eps": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Perturbation amplitude. eps = 0 is exactly Gaussian-invariant; the defect grows with |eps| (Fig S3b). Experiments use 0 to 0.8."
+                },
+                "k": {
+                  "type": "number",
+                  "description": "[perturbed_quadratic: f(x) = a x - b x^2 + eps sin(k x)] Perturbation wavenumber.",
+                  "default": 1.5
+                }
+              },
+              "additionalProperties": false
+            },
+            "polynomial": {
+              "type": "object",
+              "properties": {
+                "coefficients": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "description": "[polynomial: f(x) = sum_i coefficients[i] x^i] Polynomial coefficients c0, c1, c2, ... (increasing degree). At least one entry."
+                }
+              },
+              "additionalProperties": false
+            },
+            "sinusoid": {
+              "type": "object",
+              "properties": {
+                "eps": {
+                  "type": "number",
+                  "description": "[sinusoid: f(x) = eps sin(k x)] Amplitude.",
+                  "default": 1.2
+                },
+                "k": {
+                  "type": "number",
+                  "description": "[sinusoid: f(x) = eps sin(k x)] Wavenumber.",
+                  "default": 1.5
+                }
+              },
+              "additionalProperties": false
+            },
+            "multimodal": {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "type": "number",
+                  "description": "[multimodal: f(x) = sum_c exp(-(x - c)^2 / (2 width^2))] Bump width (standard deviation of each bump). Experiments use 0.6.",
+                  "default": 0.5
+                },
+                "centers": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "description": "[multimodal: f(x) = sum_c exp(-(x - c)^2 / (2 width^2))] Bump centers in trait units. Unit: trait units (x).",
+                  "default": [
+                    -2.0,
+                    2.0
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "stalling": {
+              "type": "object",
+              "properties": {
+                "a": {
+                  "type": "number",
+                  "description": "[stalling: f(x) = -(x^2 - a^2)^2] Well location +/- a. The Gaussian surrogate stalls at N(0, a^2/3) (set state.var or initial.var yourself).",
+                  "default": 2.0
+                }
+              },
+              "additionalProperties": false
+            },
+            "rational_conjugate": {
+              "type": "object",
+              "properties": {
+                "alpha": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Coefficient of z."
+                },
+                "beta": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Coefficient of z^2."
+                },
+                "gamma": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Additive constant (does not change any defect or trajectory)."
+                },
+                "mu": {
+                  "type": "number",
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Center of z, trait units. Unit: trait units (x)."
+                },
+                "sigma": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Scale of z, trait units. Unit: trait units (x)."
+                },
+                "nu": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "[rational_conjugate: f(x) = (alpha z + beta z^2)/(nu + z^2) + gamma, z = (x - mu)/sigma] Degrees of freedom of the conjugate Student-t family."
+                }
+              },
+              "additionalProperties": false
+            },
+            "quadratic_rational_homotopy": {
+              "type": "object",
+              "properties": {
+                "s": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "[quadratic_rational_homotopy: f_s(x) = (1 - s) x^2 + s x^2/(nu + x^2)] Homotopy parameter, quadratic (0) to rational (1)."
+                },
+                "nu": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "[quadratic_rational_homotopy: f_s(x) = (1 - s) x^2 + s x^2/(nu + x^2)] nu of the rational endpoint."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ]
+        },
+        "grid": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number",
+              "description": "Left end of the uniform quadrature grid. All densities live on [a, b]; mass outside is truncated. Unit: trait units (x).",
+              "default": -10.0
+            },
+            "b": {
+              "type": "number",
+              "description": "Right end of the quadrature grid. Unit: trait units (x).",
+              "default": 10.0
+            },
+            "n": {
+              "type": "integer",
+              "minimum": 2,
+              "description": "Number of grid points (trapezoidal quadrature). Cost scales linearly with n. Experiments use 2401 to 60001.",
+              "default": 24001
+            }
+          },
+          "additionalProperties": false
+        },
+        "state": {
+          "type": "object",
+          "properties": {
+            "family": {
+              "enum": [
+                "gaussian",
+                "student_t"
+              ],
+              "description": "Search family of the current state rho_theta and of the base score dictionary.",
+              "default": "gaussian"
+            },
+            "mu": {
+              "type": "number",
+              "description": "Location of the state density. Unit: trait units (x).",
+              "default": 0.0
+            },
+            "var": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Variance of the Gaussian state N(mu, var). Experiments use 1.0 and 2.5^2 = 6.25 (broad baseline of S4/S7). Unit: trait units squared.",
+              "default": 1.0
+            },
+            "sigma": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Scale of the Student-t state. Unit: trait units (x).",
+              "default": 1.0
+            },
+            "nu": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Degrees of freedom of the Student-t state."
+            }
+          },
+          "additionalProperties": false
+        },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "signal": {
+                    "const": "raw"
+                  }
+                },
+                "required": [
+                  "signal"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "signal": {
+                    "const": "linear"
+                  }
+                },
+                "required": [
+                  "signal"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "signal": {
+                    "const": "elite"
+                  },
+                  "tau": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 1,
+                    "description": "Elite fraction (top tau of the quantile range). Larger tau selects more of the population.",
+                    "default": 0.25
+                  }
+                },
+                "required": [
+                  "signal"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "signal": {
+                    "const": "smooth_elite"
+                  },
+                  "tau": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 1,
+                    "description": "Elite fraction (top tau of the quantile range). Larger tau selects more of the population.",
+                    "default": 0.25
+                  },
+                  "h": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Logistic bandwidth of the smooth elite (README: h = 0.05 is a representative choice).",
+                    "default": 0.05
+                  }
+                },
+                "required": [
+                  "signal"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "enum": [
+                  "raw",
+                  "linear",
+                  "elite",
+                  "smooth_elite"
+                ]
+              }
+            ]
+          },
+          "description": "Target signals to project. Shaped targets use the fitness quantile q under the state density (Section 5.1); 'raw' is the unshaped centered fitness.",
+          "default": [
+            {
+              "signal": "raw"
+            },
+            {
+              "signal": "linear"
+            },
+            {
+              "signal": "elite",
+              "tau": 0.25
+            },
+            {
+              "signal": "smooth_elite",
+              "tau": 0.25,
+              "h": 0.05
+            }
+          ]
+        },
+        "dictionaries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "augment": {
+                    "const": "none"
+                  }
+                },
+                "required": [
+                  "augment"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "augment": {
+                    "const": "legendre_rank"
+                  },
+                  "K": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Number of rank features (Legendre degree 1..K, or K bins)."
+                  }
+                },
+                "required": [
+                  "augment",
+                  "K"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "augment": {
+                    "const": "rank_bins"
+                  },
+                  "K": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Number of rank features (Legendre degree 1..K, or K bins)."
+                  }
+                },
+                "required": [
+                  "augment",
+                  "K"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "augment": {
+                    "const": "rbf"
+                  },
+                  "centers": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "description": "RBF centers (S7 uses linspace(-4, 4, 9) and linspace(-5, 5, 17))."
+                  },
+                  "h": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "RBF bandwidth (S7 uses 0.8 x center spacing)."
+                  }
+                },
+                "required": [
+                  "augment",
+                  "centers",
+                  "h"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "enum": [
+                  "none",
+                  "legendre_rank",
+                  "rank_bins",
+                  "rbf"
+                ]
+              }
+            ]
+          },
+          "description": "Score dictionaries. Each is the family's own scores plus an optional augmentation; R^2 rises with richer dictionaries.",
+          "default": [
+            {
+              "augment": "none"
+            },
+            {
+              "augment": "legendre_rank",
+              "K": 4
+            },
+            {
+              "augment": "legendre_rank",
+              "K": 8
+            },
+            {
+              "augment": "rank_bins",
+              "K": 8
+            }
+          ]
+        },
+        "ridge": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Tikhonov ridge added as ridge*mean(diag F)*I to the Gram matrix before the pseudoinverse. Unit: dimensionless.",
+          "default": 0.0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "fitness"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "perturbed_quadratic"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "perturbed_quadratic": {
+                    "properties": {
+                      "eps": {}
+                    },
+                    "required": [
+                      "eps"
+                    ]
+                  }
+                },
+                "required": [
+                  "perturbed_quadratic"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "perturbed_quadratic": {
+                    "properties": {
+                      "a": false,
+                      "b": false,
+                      "eps": false,
+                      "k": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "polynomial"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "polynomial": {
+                    "properties": {
+                      "coefficients": {}
+                    },
+                    "required": [
+                      "coefficients"
+                    ]
+                  }
+                },
+                "required": [
+                  "polynomial"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "polynomial": {
+                    "properties": {
+                      "coefficients": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "sinusoid"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "sinusoid": {
+                    "properties": {
+                      "eps": false,
+                      "k": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "multimodal"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "multimodal": {
+                    "properties": {
+                      "width": false,
+                      "centers": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "stalling"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "stalling": {
+                    "properties": {
+                      "a": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "rational_conjugate"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "rational_conjugate": {
+                    "properties": {
+                      "alpha": {},
+                      "beta": {},
+                      "gamma": {},
+                      "mu": {},
+                      "sigma": {},
+                      "nu": {}
+                    },
+                    "required": [
+                      "alpha",
+                      "beta",
+                      "gamma",
+                      "mu",
+                      "sigma",
+                      "nu"
+                    ]
+                  }
+                },
+                "required": [
+                  "rational_conjugate"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "rational_conjugate": {
+                    "properties": {
+                      "alpha": false,
+                      "beta": false,
+                      "gamma": false,
+                      "mu": false,
+                      "sigma": false,
+                      "nu": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "quadratic_rational_homotopy"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "quadratic_rational_homotopy": {
+                    "properties": {
+                      "s": {},
+                      "nu": {}
+                    },
+                    "required": [
+                      "s",
+                      "nu"
+                    ]
+                  }
+                },
+                "required": [
+                  "quadratic_rational_homotopy"
+                ]
+              }
+            },
+            "required": [
+              "fitness"
+            ]
+          },
+          "else": {
+            "properties": {
+              "fitness": {
+                "properties": {
+                  "quadratic_rational_homotopy": {
+                    "properties": {
+                      "s": false,
+                      "nu": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "state": {
+                    "properties": {
+                      "family": {
+                        "enum": [
+                          "gaussian"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "family"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              {
+                "not": {
+                  "properties": {
+                    "state": {
+                      "properties": {
+                        "family": {}
+                      },
+                      "required": [
+                        "family"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "state"
+                  ]
+                }
+              }
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "state": {
+                "properties": {
+                  "var": false
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "properties": {
+                  "family": {
+                    "enum": [
+                      "student_t"
+                    ]
+                  }
+                },
+                "required": [
+                  "family"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "properties": {
+                  "nu": {}
+                },
+                "required": [
+                  "nu"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "else": {
+            "properties": {
+              "state": {
+                "properties": {
+                  "sigma": false,
+                  "nu": false
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "experiment": {
+      "type": "object",
+      "properties": {
+        "experiment": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "enum": [
+                "S01",
+                "S03",
+                "S04",
+                "S05",
+                "S06",
+                "S07",
+                "S08",
+                "S09",
+                "S11",
+                "S13",
+                "S14",
+                "S17",
+                "S18",
+                "S19",
+                "CHK"
+              ],
+              "description": "Which supplementary experiment group to run (same ids as run_all.py)."
+            },
+            "nsamples": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Independent samples per (dictionary, N, lambda) setting in S11. The paper used 150; run_all --quick uses 20. Replaces the IGR_NSAMPLES environment variable.",
+              "default": 60
+            },
+            "nmc": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Monte Carlo sample size for Table S8 (id S18). run_all --quick uses 15000. Replaces the IGR_NMC environment variable.",
+              "default": 40000
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "id"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "experiment"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "experiment": {
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "S11"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            },
+            "required": [
+              "experiment"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "experiment": {
+                "properties": {
+                  "nsamples": false
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "experiment": {
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "S18"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            },
+            "required": [
+              "experiment"
+            ]
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "experiment": {
+                "properties": {
+                  "nmc": false
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

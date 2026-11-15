@@ -6,6 +6,8 @@ reproduces the simulations, figures, and tables of Supplementary Experiments S1-
 exact invariance, shaped selection, multi-step tracking, finite-sample estimation,
 a two-dimensional landscape, and the direct identity tests.
 
+AI agents (and anyone who prefers a command line): see [AGENTS.md](AGENTS.md) for the `igr` CLI (`igr describe`, `validate`, `run`, `query`).
+
 ## The object under study
 
 For a search family with relative scores $s_\theta = \nabla_\theta \log \rho_\theta$,
